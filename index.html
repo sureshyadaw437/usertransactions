@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Users CRUD</title>
+  <style>
+    input[type='submit'], button, [aria-label]{
+      cursor: pointer;
+    }
+    #spoiler{
+      display: none;
+    }
+	html {
+    display: table;
+    margin: auto;
+}
+
+body {
+    display: table-cell;
+    vertical-align: middle;
+}
+form{
+margin-top: 10px;
+}
+  </style>
+</head>
+<body>
+
+<div id ="AddNew">
+<form action="javascript:void(0);" method="POST" onsubmit="app.Add()"> 
+  <input type="text" id="add-name" placeholder="New User">
+  <input type="number" step="0.01" id="add-balance" placeholder="Initial Balance">
+  <input type="submit" value="Add">
+</form>
+</div>
+
+<div id="spoiler" role="aria-hidden">
+  <form action="javascript:void(0);" method="POST" id="saveEdit">
+    <input type="text" id="edit-name">
+	<input type="text" id="edit-balance">
+    <input type="submit" value="Edit" /> <a onclick="CloseInput()" aria-label="Close">&#10006;</a>
+  </form>
+</div>
+
+<h3 id="counter"></h3>
+<div id="usersTable">
+<table>
+  <tr>
+    <th>Si.No</th>
+	<th>Name</th>
+	<th>Balance</th>
+	<th>Edit</th>
+	<th>Delete</th>
+  </tr>
+    <tbody id="users">
+    </tbody>
+</table>
+</div>
+
+<div id="makeTransaction">
+<form action="javascript:void(0);" method="POST" onsubmit="app.usersAmountTransfer()"> 
+  <input type="number" id="sender-id" placeholder="SenderId">
+  <input type="number" id="recepient-id" placeholder="RecepientId">
+  <input type="number" step="0.01" id="transfer-amount" placeholder="Amount">
+  <input type="submit" value="Transfer">
+</form> 
+</div>
+
+
+<div id="userTransactions">
+<h3 id="senderName">User1 transactions </h3>
+<table>
+  <tr>
+    <th>Si.No</th>
+	<th>Recepient</th>
+	<th>Amount</th>
+  </tr>
+    <tbody id="transactions">
+    </tbody>
+</table>
+</div>
+
+<script>
+var app = new function() {
+
+  this.el = document.getElementById('users');
+
+  this.users = [{Name:'Savita Yadav',Balance:125}, {Name:'Suresh Yadaw',Balance:25}, {Name:'Neha Yadav',Balance:1025}, {Name:'V. R. Rao',Balance:125}
+  , {Name:'K.C. Rao',Balance:1725}, {Name:'Kathleen K.',Balance:105}, {Name:'Laxmi Polam',Balance:1225}, {Name:'Sandeep Kumar',Balance:1025}, {Name:'Syn S.',Balance:25}];
+  
+  this.transfers = [{SenderId:1, RecepientId:2,Amount:20}];
+
+  this.Count = function(data) {
+    var el   = document.getElementById('counter');
+    var name = 'users';
+
+    if (data) {
+      if (data > 1) {
+        name = 'users';
+      }
+      el.innerHTML = 'Total ' +data + ' ' + name + ' are available.';
+    } else {
+      el.innerHTML = 'No ' + name + ' available.';
+    }
+  };
+  
+  this.FetchAllUsers = function() {
+    var data = '';
+
+    if (this.users.length > 0) {
+      for (i = 0; i < this.users.length; i++) {
+        data += '<tr>';
+		data += '<td>' +  (i + 1) +'</td>';
+        data += '<td>' + this.users[i].Name + '</td>';
+		data += '<td>' + this.users[i].Balance + '</td>';
+        data += '<td><button onclick="app.Edit(' + i + ')">Edit</button></td>';
+        data += '<td><button onclick="app.Delete(' + i + ')">Delete</button></td>';
+        data += '</tr>';
+      }
+    }
+
+    this.Count(this.users.length);
+    return this.el.innerHTML = data;
+  };
+  
+    this.FetchAllTransactions = function(userId) {
+	debugger;
+	if(!userId){
+		return;
+	}
+	self= this;
+	document.getElementById('senderName').innerHTML = this.users[userId-1].Name + "'s Transactions"; 
+	
+    var data = '';
+	var i=1;
+	
+
+    if (self.transfers.length > 0) {
+		self.transfers.forEach(function(transfer){
+        if(transfer.SenderId == userId){
+		data += '<tr>';
+		data += '<td>' + i +'</td>';
+        data += '<td>' + self.users[transfer.RecepientId -1 ].Name + '</td>';
+		data += '<td>' + transfer.Amount + '</td>'; 
+        data += '</tr>';
+		i++;
+		}
+     }); 
+	}
+
+    return document.getElementById('transactions').innerHTML = data;
+  };
+
+  this.Add = function () {
+    name_el = document.getElementById('add-name');
+	balance_el = document.getElementById('add-balance');
+	
+    // Get the value
+    var user = name_el.value;
+	var balance = balance_el.value;
+
+    if (user) {
+      // Add the new value
+      this.users.push({Name:user.trim(),Balance: balance});
+      // Reset input value
+      name_el.value = '';
+	  balance_el.value = '';
+      // Dislay the new list
+      this.FetchAllUsers();
+    }
+  };
+
+  this.Edit = function (item) {
+    var name_el = document.getElementById('edit-name');
+	var balance_el = document.getElementById('edit-balance');
+    // Display value in the field
+    name_el.value = this.users[item].Name;
+	balance_el.value = this.users[item].Balance;
+    // Display fields
+    document.getElementById('spoiler').style.display = 'block';
+    self = this;
+
+    document.getElementById('saveEdit').onsubmit = function() {
+      // Get value
+      var user = name_el.value;
+	  var balance = balance_el.value;
+
+      if (user) {
+        // Edit value
+        self.users.splice(item, 1, {Name: user.trim(),Balance: balance});
+        // Display the new list
+        self.FetchAllUsers();
+        // Hide fields
+        CloseInput();
+      }
+    }
+  };
+
+  this.Delete = function (item) {
+    // Delete the current row
+    this.users.splice(item, 1);
+    // Display the new list
+    this.FetchAllUsers();
+  };
+ 
+ this.usersAmountTransfer = function(){
+ debugger
+	sender_el = document.getElementById('sender-id');
+	amount_el = document.getElementById('transfer-amount');
+	recepient_el = document.getElementById('recepient-id');
+	
+    // Get the value
+    var sender = sender_el.value -1;
+	var amount = amount_el.value;
+	var recepient= recepient_el.value -1;
+	self= this;
+	if(!amount)
+	{
+	alert('Please provide a valid amount');
+	return;
+	}
+	
+	if(!self.users[sender] || !self.users[recepient])
+	{
+		alert('Please provide a valid Sender/Recepient Id');
+		return;
+	}
+	if(self.users[sender]< amount)
+	{
+		alert($`Insufficient balance. Please transfer under {self.users[sender].Balance}`);
+		return;
+	}
+	
+	var senderCopy= self.users[sender];
+	var recepientCopy= self.users[recepient];
+	if(self.users[sender] == self.users[recepient])
+	{
+		senderCopy.Balance = senderCopy.Balance + amount;	
+			self.users.splice(sender, 1, senderCopy);
+	}
+	else{
+			senderCopy.Balance = +senderCopy.Balance - +amount;
+			recepientCopy.Balance = +recepientCopy.Balance + +amount;
+				self.users.splice(sender, 1, senderCopy);
+				self.users.splice(recepient, 1, recepientCopy);
+	}
+	self.transfers.push({SenderId:sender+1,RecepientId:recepient+1,Amount:amount});
+	
+
+
+      // Reset input value
+      sender_el.value = '';
+	  recepient_el.value = '';
+	  amount_el.value = '';
+      // Dislay the new list
+	  self.FetchAllUsers();
+      self.FetchAllTransactions(sender+1);
+    
+ };
+  
+}
+
+app.FetchAllUsers();
+app.FetchAllTransactions(1);
+
+function CloseInput() {
+  document.getElementById('spoiler').style.display = 'none';
+}
+</script>
+</body>
+</html>
