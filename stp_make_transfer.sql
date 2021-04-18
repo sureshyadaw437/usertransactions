@@ -39,6 +39,11 @@ if exists(select * from users where (userId=@senderId AND balance>@amount) or @s
  update users 
  set balance=balance-@amount
  where userId=@senderId
+ 
+  update users 
+ set balance=balance+@amount
+ where userId=@recipientId
+ 
  end
 
  select * from users
